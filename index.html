@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Protocol Lab: Application Layer Visualizer</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e9edf3;--panel:#fff;--bg2:#f3f5f9;--ink:#0f172a;--mut:#5b6678;--line:#c6cfdb;--grid:#dde3ec;--acc:#0050e6;--dns:#0e7490;--http:#15803d;--smtp:#b45309;--tls:#7c3aed;--tcp:#64748b;--mkb:#fde68a;--mkf:#422006;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#06080c;--panel:#0b1016;--bg2:#101821;--ink:#e6edf3;--mut:#7f8c9c;--line:#1f2a37;--grid:#0f161e;--acc:#3d8bff;--dns:#22d3ee;--http:#4ade80;--smtp:#fbbf24;--tls:#a78bfa;--tcp:#94a3b8;--mkb:#4a3b00;--mkf:#fde047}}
+:root[data-theme="dark"]{--bg:#06080c;--panel:#0b1016;--bg2:#101821;--ink:#e6edf3;--mut:#7f8c9c;--line:#1f2a37;--grid:#0f161e;--acc:#3d8bff;--dns:#22d3ee;--http:#4ade80;--smtp:#fbbf24;--tls:#a78bfa;--tcp:#94a3b8;--mkb:#4a3b00;--mkf:#fde047}
+*,*::before,*::after{box-sizing:border-box;border-radius:0!important}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{height:100%;margin:0}
+body{display:flex;flex-direction:column;background:var(--bg) linear-gradient(var(--grid) 1px,transparent 1px) 0 0/100% 32px;color:var(--ink);font:13px/1.55 "JetBrains Mono",ui-monospace,Menlo,Consolas,monospace}
+h1,h2,h3,h4{font-family:"Space Grotesk",system-ui,sans-serif;margin:0}
+header.top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line)}
+h1{font-size:18px;letter-spacing:.02em}h1 small{font:400 12px "JetBrains Mono",monospace;color:var(--mut);margin-left:10px}
+.leg{display:flex;gap:14px;color:var(--mut);font-size:11px}.leg i{display:inline-block;width:9px;height:9px;background:var(--c);margin-right:5px}
+main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(340px,5fr) 7fr;gap:1px;background:var(--line)}
+.panel{background:var(--panel);display:flex;flex-direction:column;min-height:0}
+.ph{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--bg2)}
+.ph h2{font-size:14px}.ph span{color:var(--mut);font-size:11px}
+.pb{padding:16px;overflow:auto;flex:1;display:flex;flex-direction:column;gap:14px}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line)}
+.tab{padding:10px;background:var(--bg2);color:var(--mut);border:0;border-right:1px solid var(--line);font:600 12px inherit;font-family:inherit;cursor:pointer}
+.tab:last-child{border-right:0}.tab.on{background:var(--acc);color:#fff}
+label{display:block;color:var(--mut);font-size:11px;margin-bottom:4px}
+input,textarea,select{width:100%;background:var(--bg2);color:var(--ink);border:1px solid var(--line);padding:9px 10px;font:inherit}
+:is(input,textarea,select,button):focus-visible{outline:2px solid var(--acc);outline-offset:-1px}
+.f{display:flex;flex-direction:column;gap:10px}.row{display:flex;gap:8px;align-items:flex-end}.row>*{flex:1}.row>button{flex:0 0 auto}
+button{font:inherit}
+.btn{background:var(--acc);color:#fff;border:1px solid var(--acc);padding:9px 16px;font-weight:600;cursor:pointer}
+.btn.g{background:transparent;color:var(--ink);border-color:var(--line)}.btn:hover:not(:disabled){border-color:var(--ink)}.btn:disabled{opacity:.4;cursor:default}
+.stat{border:1px solid var(--line);border-left:3px solid var(--acc);padding:8px 10px;background:var(--bg2)}
+.log{border:1px solid var(--line);background:var(--bg2);max-height:190px;overflow:auto;padding:8px;font-size:12px}
+.log div{color:var(--pc);margin-bottom:2px}.log b{color:var(--mut);font-weight:400}
+.page,.video{border:1px solid var(--line);background:var(--bg2)}
+.bar{padding:6px 10px;border-bottom:1px solid var(--line);color:var(--mut);font-size:12px;overflow-wrap:anywhere}
+.page .c{padding:14px}.page h3{font-size:20px;margin-bottom:6px}
+.scr{aspect-ratio:16/9;background:repeating-linear-gradient(0deg,#0a0f16 0 3px,#0d1420 3px 6px);color:#9fd0ff;display:flex;align-items:center;justify-content:center;font:700 16px "Space Grotesk",sans-serif;position:relative}
+.scr small{position:absolute;right:10px;bottom:8px;font:400 12px "JetBrains Mono",monospace;color:#7f8c9c}
+.seek{height:8px;background:var(--line);position:relative}.seek i{position:absolute;left:0;top:0;bottom:0}
+#buf{background:var(--tcp);opacity:.6}#pos{background:var(--acc)}
+.ctl{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid var(--line)}
+.ctl input[type=range]{flex:1;min-width:110px;padding:0;accent-color:var(--acc);border:0;background:none}
+.ctl select{width:auto}
+.chips{display:flex;overflow-x:auto;border-bottom:1px solid var(--line);flex:none}
+.chip{padding:6px 14px;border-right:1px solid var(--line);color:var(--mut);font-size:11px;white-space:nowrap}
+.chip.done{color:var(--ink)}.chip.now{background:var(--acc);color:#fff}
+.lanes{display:grid;grid-template-columns:1fr 1fr;padding:8px 16px;font:700 11px "Space Grotesk",sans-serif;color:var(--mut);border-bottom:1px solid var(--line)}
+.lanes span:last-child{text-align:right;overflow-wrap:anywhere}
+#tl{background:linear-gradient(var(--line),var(--line)) 50%/1px 100% no-repeat}
+.card{width:84%;border:1px solid var(--line);background:var(--panel);margin-bottom:12px;border-left:3px solid var(--pc)}
+.card.c{margin-right:auto}.card.s{margin-left:auto;border-left:1px solid var(--line);border-right:3px solid var(--pc)}.card.b{width:100%;border-left:3px solid var(--pc)}
+.card.act{box-shadow:0 0 0 1px var(--pc),0 0 22px -6px var(--pc)}
+.card.new{animation:in .35s ease-out}.card.s.new{animation-name:ins}
+@keyframes in{from{opacity:0;transform:translateX(-16px)}}@keyframes ins{from{opacity:0;transform:translateX(16px)}}
+.card header{display:flex;gap:8px;align-items:center;padding:6px 10px;background:var(--bg2);font-size:11px;flex-wrap:wrap}
+.tag{background:var(--pc);color:var(--panel);font-weight:700;padding:0 6px}.tm{margin-left:auto;color:var(--mut)}.n{color:var(--mut)}
+.card h4{font-size:13px;padding:8px 10px 0}
+pre{margin:0;padding:6px 10px 10px;white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;font-size:12px}
+mark{background:var(--mkb);color:var(--mkf);padding:0 2px}
+.empty{color:var(--mut);text-align:center;padding:60px 20px}
+@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+@media(max-width:900px){html,body{height:auto}main{grid-template-columns:1fr}.pb{overflow:visible}#vz{min-height:70vh}.card{width:94%}}
+</style></head><body>
+<header class="top"><h1>Protocol Lab<small>Computer Networks / Application Layer</small></h1>
+<div class="leg"><span style="--c:var(--dns)"><i></i>DNS</span><span style="--c:var(--tcp)"><i></i>TCP</span><span style="--c:var(--tls)"><i></i>TLS</span><span style="--c:var(--http)"><i></i>HTTP</span><span style="--c:var(--smtp)"><i></i>SMTP</span></div></header>
+<main>
+<section class="panel"><div class="ph"><h2>Activity</h2><span>Left panel: what the user does</span></div>
+<div class="pb">
+<div class="tabs" id="tabs"><button class="tab on" data-m="browse">Browsing</button><button class="tab" data-m="mail">Mail</button><button class="tab" data-m="stream">Streaming</button></div>
+<div class="f" id="m-browse"><div class="row"><div><label for="url">URL</label><input id="url" value="http://example.com/index.html" spellcheck="false"></div><button class="btn" id="visit">Visit</button></div>
+<div class="page"><div class="bar" id="pbar">about:blank</div><div class="c" id="pc"><span style="color:var(--mut)">Enter a URL and press Visit.</span></div></div></div>
+<div class="f" id="m-mail" hidden><div><label for="to">To</label><input id="to" value="friend@example.org"></div><div><label for="sub">Subject</label><input id="sub" value="Hello from Computer Networks"></div><div><label for="body">Body</label><textarea id="body" rows="4">Hi! This message was delivered over SMTP.</textarea></div><button class="btn" id="send">Send email</button><div id="rcpt"></div></div>
+<div class="f" id="m-stream" hidden><div class="row"><div><label for="q">Quality</label><select id="q"><option>360p</option><option selected>720p</option><option>1080p</option></select></div><button class="btn" id="pp">Play</button></div>
+<div class="video"><div class="scr"><span id="vs">IDLE</span><small id="vt">00:00</small></div><div class="seek"><i id="buf"></i><i id="pos"></i></div></div></div>
+<div><label>Status</label><div class="stat" id="stat">Ready. Choose an action.</div></div>
+<div><label>Activity log</label><div class="log" id="log"></div></div>
+</div></section>
+<section class="panel" id="vz"><div class="ph"><h2>Protocol visualizer</h2><span id="cnt">0 / 0</span></div>
+<div class="ctl"><button class="btn g" id="bp" aria-label="Step back">Prev</button><button class="btn" id="bt">Play</button><button class="btn g" id="bn" aria-label="Step forward">Next</button><button class="btn g" id="br">Replay</button>
+<select id="sp" aria-label="Speed"><option value="0.5">0.5x</option><option value="1" selected>1x</option><option value="2">2x</option></select><input type="range" id="sc" min="0" max="0" value="0" aria-label="Timeline"></div>
+<div class="chips" id="chips"></div><div class="lanes"><span>CLIENT</span><span id="peer">-</span></div>
+<div class="pb"><div id="tl"><div class="empty">Nothing on the wire yet.<br>Start an activity on the left and each message will appear here.</div></div></div>
+</section></main>
+<script>
+const $=s=>document.querySelector(s),esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'),
+hl=s=>esc(s).replace(/«/g,'<mark>').replace(/»/g,'</mark>'),
+hash=s=>[...s].reduce((a,c)=>(a*31+c.charCodeAt(0))>>>0,7),
+ipOf=h=>{const x=hash(h);return`${x%180+20}.${x>>8&255}.${x>>16&255}.${(x>>>24)%253+1}`},
+hex=n=>(n>>>0).toString(16).padStart(4,'0').slice(-4),
+PC={DNS:'--dns',TCP:'--tcp',TLS:'--tls',HTTP:'--http',SMTP:'--smtp'},
+st=(p,d,peer,title,body,dt,ph,log,tag)=>({p,d,peer,title,body,dt,ph,log,tag});
+const QS={'360p':[800000,'640x360',420100],'720p':[2400000,'1280x720',1150300],'1080p':[5000000,'1920x1080',2310800]};
+const dns=(h,type='A')=>{const id=hex(hash(h+type)),ip=ipOf(h),r='DNS RESOLVER 8.8.8.8:53',
+ ans=type==='MX'?`${h}.   300  IN  MX  «10 mail.${h}.»`:`${h}.   «300»  IN  A  «${ip}»`;
+ return[st('DNS','c',r,`DNS query: ${type} record (UDP)`,`;; opcode: QUERY, id: «${id}», flags: rd\n;; QUESTION SECTION:\n«${h}.»    IN    «${type}»`,3,'DNS',`Asking resolver for ${type} of ${h}`),
+ st('DNS','s',r,'DNS response: NOERROR',`;; status: «NOERROR», id: ${id}, flags: qr rd ra\n;; ANSWER SECTION:\n${ans}\n;; Query time: 14 msec`,14,'DNS',type==='MX'?`Mail exchanger is mail.${h}`:`Resolved ${h} to ${ip}`)]};
+const conn=(h,ip,port,tls)=>{const x=hash(h)%90000,y=hash(ip)%90000,a=[st('TCP','b',`${ip}:${port}`,`TCP 3-way handshake, port ${port}`,`→ «SYN»        seq=${x}\n← «SYN, ACK»   seq=${y} ack=${x+1}\n→ «ACK»        ack=${y+1}  ESTABLISHED`,22,'CONNECT',`TCP connected to ${ip}:${port}`)];
+ if(tls)a.push(st('TLS','b',h,'TLS 1.3 handshake',`→ ClientHello  SNI=«${h}»  ALPN=«h2, http/1.1»\n← ServerHello + Certificate + Finished  «TLS_AES_256_GCM_SHA384»\n→ Finished. Encrypted channel ready.\n(HTTP below is shown decrypted for learning)`,30,'CONNECT','TLS secure channel established'));return a};
+const req=(h,ip,m,path,ph,extra=[],log)=>st('HTTP','c',`${h} (${ip})`,`HTTP request: ${m} ${path}`,[`«${m} ${path}» HTTP/1.1`,`Host: «${h}»`,'User-Agent: ProtocolLab/1.0','Accept: */*','Accept-Encoding: gzip','Connection: keep-alive',...extra].join('\n'),4,ph,log);
+const res=(h,ip,status,hd,body,ph,log,dt=25,tag)=>st('HTTP','s',`${h} (${ip})`,`HTTP response: ${status}`,[`HTTP/1.1 «${status}»`,'Date: '+new Date().toUTCString(),'Server: nginx/1.24',...hd,'',body].join('\n'),dt,ph,log,tag);
+function buildBrowse(u){const url=new URL(/^https?:\/\//i.test(u)?u:'http://'+u),h=url.hostname,ip=ipOf(h),tls=url.protocol==='https:',path=url.pathname+url.search,
+ html=`<!doctype html>\n<html><head><title>${h}</title></head>\n<body><h1>Welcome to ${h}</h1></body></html>`;
+ return{kind:'browse',meta:{h,tls,url:url.href},steps:[...dns(h),...conn(h,ip,tls?443:80,tls),req(h,ip,'GET',path,'HTTP',[],'Sent GET '+path),
+ res(h,ip,'200 OK',['Content-Type: «text/html; charset=UTF-8»','Content-Length: «'+html.length+'»','Connection: keep-alive'],html,'HTTP','Page received: 200 OK')]}}
+function buildMail(to,sub,body){const d=to.split('@')[1],ip=ipOf('mail.'+d),m='mail.'+d,me='student@lab.local',S='SMTP',r=(t,b,ph,l,dt=8)=>st(S,'s',m,t,b,dt,ph,l),c=(t,b,ph,l)=>st(S,'c',m,t,b,3,ph,l);
+ const data=`From: ${me}\nTo: ${to}\nSubject: «${sub}»\nDate: ${new Date().toUTCString()}\nMessage-ID: <${hex(hash(sub))}@lab.local>\n\n${body}\n«.»`;
+ return{kind:'mail',meta:{to,sub},steps:[...dns(d,'MX'),...conn(m,ip,25,false),
+ r('220 greeting',`«220» ${m} ESMTP Postfix`,'CONNECT','Server greeted with 220'),c('EHLO','«EHLO» lab.local','EHLO','Client introduced itself (EHLO)'),
+ r('250 capabilities',`«250-»${m} Hello lab.local\n250-SIZE 35882577\n250-8BITMIME\n250-STARTTLS\n«250 »SMTPUTF8`,'EHLO','Server listed extensions'),
+ c('MAIL FROM',`«MAIL FROM:»<${me}>`,'MAIL FROM','Sender declared'),r('250 sender ok','«250» 2.1.0 Ok','MAIL FROM','Sender accepted'),
+ c('RCPT TO',`«RCPT TO:»<${to}>`,'RCPT TO','Recipient declared'),r('250 recipient ok','«250» 2.1.5 Ok','RCPT TO','Recipient accepted'),
+ c('DATA','«DATA»','DATA','Asked to send message data'),r('354 go ahead','«354» End data with <CR><LF>.<CR><LF>','DATA','Server ready for message'),
+ c('Message headers and body',data,'DATA','Message transmitted'),r('250 queued',`«250» 2.0.0 Ok: queued as ${hex(hash(body)).toUpperCase()}A1`,'DATA','Server queued the message',30,'sent'),
+ c('QUIT','«QUIT»','QUIT','Closing session'),r('221 bye','«221» 2.0.0 Bye','QUIT','Connection closed by server')]}}
+const segs=(q,from,n)=>{const a=[];for(let i=from;i<from+n;i++){const p=`/live/${q}/seg${i}.ts`,z=QS[q][2];a.push(req(H,HIP,'GET',p,'SEGMENTS',['Range: bytes=0-'],`Requesting segment ${i} (${q})`),res(H,HIP,'200 OK',['Content-Type: «video/MP2T»','Content-Length: «'+z+'»'],`[${z} bytes of MPEG-TS video]`,'SEGMENTS',`Segment ${i} buffered (${q})`,30+z/20000|0,'seg'))}return a};
+const H='cdn.streamlab.tv',HIP=ipOf(H);
+const media=q=>[req(H,HIP,'GET',`/live/${q}/index.m3u8`,'PLAYLIST',[],`Requesting ${q} playlist`),res(H,HIP,'200 OK',['Content-Type: «application/vnd.apple.mpegurl»'],`#EXTM3U\n#EXT-X-TARGETDURATION:4\n#EXT-X-MEDIA-SEQUENCE:0\n#EXTINF:4.0,\n«seg0.ts»\n#EXTINF:4.0,\nseg1.ts`,'PLAYLIST',`${q} playlist loaded`)];
+function buildStream(q){return{kind:'stream',q,n:0,steps:[...dns(H),...conn(H,HIP,443,true),req(H,HIP,'GET','/live/master.m3u8','MASTER',[],'Requesting master playlist'),
+ res(H,HIP,'200 OK',['Content-Type: «application/vnd.apple.mpegurl»'],'#EXTM3U\n'+Object.entries(QS).map(([k,v])=>`#EXT-X-STREAM-INF:BANDWIDTH=${v[0]},RESOLUTION=${v[1]}\n${k}/index.m3u8`).join('\n'),'MASTER','Master playlist lists 3 qualities'),
+ ...media(q),...segs(q,0,3)],ext(){this.steps.push(...segs(this.q,this.n+3,2));this.n+=2}}}
+let S=null,idx=-1,playing=false,timer=null,mode='browse',pos=0,speed=1;
+const cur=()=>S?S.steps:[];
+function schedule(){clearTimeout(timer);if(!playing||!S)return;timer=setTimeout(()=>{if(idx<S.steps.length-1)go(idx+1);else if(S.kind==='stream')S.ext(),go(idx+1);else{playing=false;render();return}schedule()},idx<0?300:1400/speed)}
+function go(i){idx=Math.max(-1,Math.min(cur().length-1,i));render()}
+function start(s){S=s;idx=-1;pos=0;playing=true;render();schedule()}
+function toggle(){if(!S)return;playing=!playing;if(playing&&idx>=S.steps.length-1&&S.kind!=='stream')idx=-1;schedule();render()}
+function setMode(m){mode=m;clearTimeout(timer);S=null;idx=-1;playing=false;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.m===m));['browse','mail','stream'].forEach(k=>$('#m-'+k).hidden=k!==m);render()}
+function video(){const b=cur().slice(0,idx+1).filter(s=>s.tag==='seg').length*4;if(playing&&S&&S.kind==='stream'&&pos<b)pos=Math.min(b,pos+.25);
+ $('#vs').textContent=!S?'IDLE':!playing?'PAUSED':pos>=b?'BUFFERING':'PLAYING '+S.q;const m=Math.floor(pos/60),s=Math.floor(pos%60);$('#vt').textContent=`${String(m).padStart(2,0)}:${String(s).padStart(2,0)}`;
+ $('#buf').style.width=Math.min(100,b/60*100)+'%';$('#pos').style.width=Math.min(100,pos/60*100)+'%'}
+function render(){const st=cur(),last=idx>=st.length-1&&st.length>0,now=st[idx];let t=0;
+ $('#cnt').textContent=`${idx+1} / ${st.length}`;$('#bt').textContent=playing?'Pause':'Play';$('#pp').textContent=playing&&S?.kind==='stream'?'Pause':'Play';
+ $('#sc').max=st.length;$('#sc').value=idx+1;$('#bp').disabled=idx<0;$('#bn').disabled=!S||(last&&S.kind!=='stream');
+ const ph=[...new Set(st.map(s=>s.ph))],ni=now?ph.indexOf(now.ph):-1;
+ $('#chips').innerHTML=ph.map((p,i)=>`<span class="chip ${i<ni?'done':i===ni?'now':''}">${p}</span>`).join('');
+ $('#peer').textContent=now?now.peer:'-';
+ $('#tl').innerHTML=st.length&&idx>=0?st.slice(0,idx+1).map((s,i)=>{t+=s.dt;const a={c:'CLIENT → '+s.peer,s:s.peer+' → CLIENT',b:'CLIENT ⇄ '+s.peer}[s.d];
+  return`<article class="card ${s.d} ${i===idx?'act new':''}" style="--pc:var(${PC[s.p]})"><header><span class="n">${String(i+1).padStart(2,'0')}</span><span class="tag">${s.p}</span><span>${esc(a)}</span><span class="tm">T+${t} ms</span></header><h4>${esc(s.title)}</h4><pre>${hl(s.body)}</pre></article>`}).join(''):'<div class="empty">Nothing on the wire yet.<br>Start an activity on the left and each message will appear here.</div>';
+ const tl=$('#tl').parentNode;if(idx>=0)tl.scrollTop=tl.scrollHeight;
+ $('#stat').textContent=now?.log||(S?'Starting...':'Ready. Choose an action.');
+ $('#log').innerHTML=st.slice(0,idx+1).filter(s=>s.log).map(s=>`<div style="--pc:var(${PC[s.p]})"><b>[${s.p}]</b> ${esc(s.log)}</div>`).join('')||'<span style="color:var(--mut)">No activity yet.</span>';
+ $('#log').scrollTop=1e6;
+ if(S?.kind==='browse'){const m=S.meta,ok=last;$('#pbar').textContent=(m.tls?'Secure: ':'Not secure: ')+m.url;$('#pc').innerHTML=ok?`<h3>Welcome to ${esc(m.h)}</h3><span style="color:var(--http)">200 OK</span> Page rendered from the HTTP response.`:'<span style="color:var(--mut)">Loading...</span>'}
+ if(S?.kind==='mail')$('#rcpt').innerHTML=last?`<div class="stat" style="border-left-color:var(--http)">Delivered to server queue: ${esc(S.meta.to)}<br>Subject: ${esc(S.meta.sub)}</div>`:'';else $('#rcpt').innerHTML='';
+ video()}
+$('#tabs').onclick=e=>e.target.dataset.m&&setMode(e.target.dataset.m);
+$('#visit').onclick=()=>{try{start(buildBrowse($('#url').value.trim()))}catch{$('#stat').textContent='Invalid URL. Try http://example.com/'}};
+$('#url').onkeydown=e=>e.key==='Enter'&&$('#visit').click();
+$('#send').onclick=()=>{const to=$('#to').value.trim();if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)){$('#stat').textContent='Enter a valid recipient address, like name@example.org.';return}start(buildMail(to,$('#sub').value||'(no subject)',$('#body').value))};
+$('#pp').onclick=()=>S?.kind==='stream'?toggle():start(buildStream($('#q').value));
+$('#q').onchange=()=>{if(S?.kind==='stream'){S.q=$('#q').value;S.steps.push(...media(S.q),...segs(S.q,S.n+3,2));S.n+=2}};
+$('#bt').onclick=toggle;$('#bp').onclick=()=>{playing=false;clearTimeout(timer);go(idx-1)};
+$('#bn').onclick=()=>{if(!S)return;playing=false;clearTimeout(timer);if(idx>=S.steps.length-1&&S.kind==='stream')S.ext();go(idx+1)};
+$('#br').onclick=()=>{if(S){idx=-1;pos=0;playing=true;render();schedule()}};
+$('#sp').onchange=e=>{speed=+e.target.value;schedule()};
+$('#sc').oninput=e=>{playing=false;clearTimeout(timer);go(+e.target.value-1)};
+setInterval(()=>{if(S?.kind==='stream')video()},250);render();
+</script></body></html>
